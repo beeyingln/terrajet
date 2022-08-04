@@ -1,4 +1,4 @@
-module github.com/crossplane/terrajet
+module github.com/beeyingl/terrajet
 
 go 1.17
 
