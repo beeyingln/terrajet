@@ -42,3 +42,7 @@ var RegisterTemplate string
 // SetupTemplate is populated with controller setup calls.
 //go:embed setup.go.tmpl
 var SetupTemplate string
+
+// ToolsTemplate.
+//go:embed tools.go.tmpl
+var ToolsTemplate string

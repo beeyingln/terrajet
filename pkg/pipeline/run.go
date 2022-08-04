@@ -67,6 +67,8 @@ func Run(pc *config.Provider, rootDir string) { // nolint:gocyclo
 	for _, p := range pc.BasePackages.Controller {
 		controllerPkgList = append(controllerPkgList, filepath.Join(pc.ModulePath, p))
 	}
+	var toolsResources = make(map[string]map[string]string)
+
 	count := 0
 	for group, versions := range resourcesGroups {
 		for version, resources := range versions {
@@ -101,6 +103,13 @@ func Run(pc *config.Provider, rootDir string) { // nolint:gocyclo
 				panic(errors.Wrap(err, "cannot generate version files"))
 			}
 			apiVersionPkgList = append(apiVersionPkgList, versionGen.Package().Path())
+
+			for _, val := range tfResources {
+				toolsResources[val.Name] = map[string]string{
+					"struct":  val.Kind,
+					"package": versionGen.Package().Path(),
+				}
+			}
 		}
 	}
 
@@ -109,6 +118,9 @@ func Run(pc *config.Provider, rootDir string) { // nolint:gocyclo
 	}
 	if err := NewSetupGenerator(rootDir, pc.ModulePath).Generate(controllerPkgList); err != nil {
 		panic(errors.Wrap(err, "cannot generate setup file"))
+	}
+	if err := NewToolsGenerator(rootDir, pc.ModulePath).Generate(toolsResources); err != nil {
+		panic(errors.Wrap(err, "cannot generate tools file"))
 	}
 
 	// NOTE(muvaf): gosec linter requires that the whole command is hard-coded.

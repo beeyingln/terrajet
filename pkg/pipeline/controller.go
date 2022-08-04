@@ -48,14 +48,14 @@ type ControllerGenerator struct {
 
 // Generate writes controller setup functions.
 func (cg *ControllerGenerator) Generate(cfg *config.Resource, typesPkgPath string) (pkgPath string, err error) {
-	controllerPkgPath := filepath.Join(cg.ModulePath, "internal", "controller", strings.ToLower(strings.Split(cg.Group, ".")[0]), strings.ToLower(cfg.Kind))
-	ctrlFile := wrapper.NewFile(controllerPkgPath, strings.ToLower(cfg.Kind), templates.ControllerTemplate,
+	controllerPkgPath := filepath.Join(cg.ModulePath, "internal", "controller", strings.ToLower(strings.Split(cg.Group, ".")[0]), FormatPackageName(cfg.Kind))
+	ctrlFile := wrapper.NewFile(controllerPkgPath, FormatPackageName(cfg.Kind), templates.ControllerTemplate,
 		wrapper.WithGenStatement(GenStatement),
 		wrapper.WithHeaderPath(cg.LicenseHeaderPath),
 	)
 
 	vars := map[string]interface{}{
-		"Package": strings.ToLower(cfg.Kind),
+		"Package": FormatPackageName(cfg.Kind),
 		"CRD": map[string]string{
 			"Kind": cfg.Kind,
 		},
@@ -66,9 +66,19 @@ func (cg *ControllerGenerator) Generate(cfg *config.Resource, typesPkgPath strin
 		"Initializers":           cfg.InitializerFns,
 	}
 
-	filePath := filepath.Join(cg.ControllerGroupDir, strings.ToLower(cfg.Kind), "zz_controller.go")
+	filePath := filepath.Join(cg.ControllerGroupDir, FormatPackageName(cfg.Kind), "zz_controller.go")
 	return controllerPkgPath, errors.Wrap(
 		ctrlFile.Write(filePath, vars, os.ModePerm),
 		"cannot write controller file",
 	)
+}
+
+func FormatPackageName(packageName string) string {
+	name := strings.ToLower(packageName)
+
+	if name == "range" || name == "interface" || name == "type" {
+		name += "terrajet"
+	}
+
+	return name
 }

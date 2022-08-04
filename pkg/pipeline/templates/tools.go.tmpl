@@ -1,0 +1,71 @@
+{{ .Header }}
+
+{{ .GenStatement }}
+
+package tools
+
+import (
+	"errors"
+	"encoding/json"
+
+	{{ .Imports }}
+	tfjson "github.com/crossplane/terrajet/pkg/resource/json"
+	"k8s.io/apimachinery/pkg/runtime"
+	
+)
+
+func GetObservationId(terraformResourceType string, data []byte) (string, error) {
+	switch terraformResourceType {
+	{{range $key, $value := .Resources}}
+	case "{{ $key }}":
+		obj := &{{ $value }}Observation{}
+		err := json.Unmarshal(data, obj)
+		if err != nil {
+			return "", err
+		}
+		return *obj.ID, nil
+    {{end}}
+	default:
+		return "", errors.New("Invalid Resource Type " + terraformResourceType)
+	}
+}
+
+func ConvertJSONToResourceParameters(terraformResourceType string, data runtime.RawExtension) (interface{}, error) {
+	var rp interface{}
+
+	switch terraformResourceType {
+	{{range $key, $value := .Resources}}
+	case "{{ $key }}":
+		rp = {{ $value }}Parameters{}
+	{{end}}
+	default:
+		return "", errors.New("Invalid Resource Type " + terraformResourceType)
+	}
+
+	err := json.Unmarshal(data.Raw, &rp)
+	if err != nil {
+		return nil, err
+	}
+
+	return rp, nil
+}
+
+func ConvertTFJSONToResourceParameters(terraformResourceType string, data []byte) (interface{}, error) {
+	var rp interface{}
+
+	switch terraformResourceType {
+	{{range $key, $value := .Resources}}
+	case "{{ $key }}":
+		rp = {{ $value }}Parameters{}
+	{{end}}
+	default:
+		return "", errors.New("Invalid Resource Type " + terraformResourceType)
+	}
+
+	err := tfjson.TFParser.Unmarshal(data, &rp)
+	if err != nil {
+		return nil, err
+	}
+
+	return rp, nil
+}
