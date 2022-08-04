@@ -36,13 +36,13 @@ func ConvertJSONToResourceParameters(terraformResourceType string, data runtime.
 	switch terraformResourceType {
 	{{range $key, $value := .Resources}}
 	case "{{ $key }}":
-		rp = {{ $value }}Parameters{}
+		rp = &{{ $value }}Parameters{}
 	{{end}}
 	default:
 		return "", errors.New("Invalid Resource Type " + terraformResourceType)
 	}
 
-	err := json.Unmarshal(data.Raw, &rp)
+	err := json.Unmarshal(data.Raw, rp)
 	if err != nil {
 		return nil, err
 	}
@@ -56,13 +56,13 @@ func ConvertTFJSONToResourceParameters(terraformResourceType string, data []byte
 	switch terraformResourceType {
 	{{range $key, $value := .Resources}}
 	case "{{ $key }}":
-		rp = {{ $value }}Parameters{}
+		rp = &{{ $value }}Parameters{}
 	{{end}}
 	default:
 		return "", errors.New("Invalid Resource Type " + terraformResourceType)
 	}
 
-	err := tfjson.TFParser.Unmarshal(data, &rp)
+	err := tfjson.TFParser.Unmarshal(data, rp)
 	if err != nil {
 		return nil, err
 	}
