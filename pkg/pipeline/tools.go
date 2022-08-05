@@ -19,6 +19,7 @@ package pipeline
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/muvaf/typewriter/pkg/wrapper"
 	"github.com/pkg/errors"
@@ -52,7 +53,9 @@ func (atg *ToolsGenerator) Generate(toolsResources map[string]map[string]string)
 
 	resources := make(map[string]string)
 	for key, value := range toolsResources {
-		resources[key] = toolsFile.Imports.UsePackage(value["package"]) + value["struct"]
+		if !strings.HasSuffix(key, "_resource") {
+			resources[key] = toolsFile.Imports.UsePackage(value["package"]) + value["struct"]
+		}
 	}
 
 	vars := map[string]interface{}{
