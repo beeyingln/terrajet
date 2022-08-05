@@ -76,7 +76,7 @@ func (cg *ControllerGenerator) Generate(cfg *config.Resource, typesPkgPath strin
 func FormatPackageName(packageName string) string {
 	name := strings.ToLower(packageName)
 
-	if name == "range" || name == "interface" || name == "type" {
+	if name == "range" || name == "interface" || name == "type" || name == "default" {
 		name += "terrajet"
 	}
 
