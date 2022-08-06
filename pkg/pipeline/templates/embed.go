@@ -43,6 +43,10 @@ var RegisterTemplate string
 //go:embed setup.go.tmpl
 var SetupTemplate string
 
+// ClientTemplate.
+//go:embed client.go.tmpl
+var ClientTemplate string
+
 // ToolsTemplate.
 //go:embed tools.go.tmpl
 var ToolsTemplate string

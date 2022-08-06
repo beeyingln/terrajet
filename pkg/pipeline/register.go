@@ -20,6 +20,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/muvaf/typewriter/pkg/wrapper"
 	"github.com/pkg/errors"
@@ -51,9 +52,13 @@ func (rg *RegisterGenerator) Generate(versionPkgList []string) error {
 		wrapper.WithHeaderPath(rg.LicenseHeaderPath),
 	)
 	sort.Strings(versionPkgList)
-	aliases := make([]string, len(versionPkgList))
-	for i, pkgPath := range versionPkgList {
-		aliases[i] = registerFile.Imports.UsePackage(pkgPath)
+	aliases := make([]string, 2)
+	index := 0
+	for _, pkgPath := range versionPkgList {
+		if strings.HasSuffix(pkgPath, "/apis/resource/v1alpha1") || strings.HasSuffix(pkgPath, "/apis/v1alpha1") {
+			aliases[index] = registerFile.Imports.UsePackage(pkgPath)
+			index++
+		}
 	}
 	vars := map[string]interface{}{
 		"Aliases": aliases,

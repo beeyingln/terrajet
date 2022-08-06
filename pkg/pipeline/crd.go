@@ -101,6 +101,7 @@ func (cg *CRDGenerator) Generate(cfg *config.Resource) (string, error) {
 			"ShortName": cg.ProviderShortName,
 		},
 		"XPCommonAPIsPackageAlias": file.Imports.UsePackage(tjtypes.PackagePathXPCommonAPIs),
+		"IsAggregateResource":      strings.Compare(cfg.Kind, "Resource") == 0,
 	}
 	filePath := filepath.Join(cg.LocalDirectoryPath, fmt.Sprintf("zz_%s_types.go", strings.ToLower(cfg.Kind)))
 	return gen.ForProviderType.Obj().Name(), errors.Wrap(file.Write(filePath, vars, os.ModePerm), "cannot write crd file")

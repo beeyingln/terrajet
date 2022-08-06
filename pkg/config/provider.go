@@ -99,6 +99,8 @@ type Provider struct {
 	// resourceConfigurators is a map holding resource configurators where key
 	// is Terraform resource name.
 	resourceConfigurators map[string]ResourceConfiguratorChain
+
+	Configuration map[string]*tfjson.SchemaAttribute
 }
 
 // A ProviderOption configures a Provider.
@@ -158,17 +160,19 @@ func NewProviderWithSchema(schema []byte, prefix string, modulePath string, opts
 		panic(fmt.Sprintf("there should exactly be 1 provider schema but there are %d", len(ps.Schemas)))
 	}
 	var rs map[string]*tfjson.Schema
+	var cs map[string]*tfjson.SchemaAttribute
 	for _, v := range ps.Schemas {
 		rs = v.ResourceSchemas
+		cs = v.ConfigSchema.Block.Attributes
 		break
 	}
-	return NewProvider(conversiontfjson.GetV2ResourceMap(rs), prefix, modulePath, opts...)
+	return NewProvider(conversiontfjson.GetV2ResourceMap(rs), cs, prefix, modulePath, opts...)
 }
 
 // NewProvider builds and returns a new Provider.
 // Deprecated: This function will be removed soon, please use
 // NewProviderWithSchema instead.
-func NewProvider(resourceMap map[string]*schema.Resource, prefix string, modulePath string, opts ...ProviderOption) *Provider {
+func NewProvider(resourceMap map[string]*schema.Resource, attributesMap map[string]*tfjson.SchemaAttribute, prefix string, modulePath string, opts ...ProviderOption) *Provider {
 	p := &Provider{
 		ModulePath:              modulePath,
 		TerraformResourcePrefix: fmt.Sprintf("%s_", prefix),
@@ -182,6 +186,7 @@ func NewProvider(resourceMap map[string]*schema.Resource, prefix string, moduleP
 		},
 		Resources:             map[string]*Resource{},
 		resourceConfigurators: map[string]ResourceConfiguratorChain{},
+		Configuration:         map[string]*tfjson.SchemaAttribute{},
 	}
 
 	for _, o := range opts {
@@ -203,6 +208,10 @@ func NewProvider(resourceMap map[string]*schema.Resource, prefix string, moduleP
 		}
 
 		p.Resources[name] = p.DefaultResourceFn(name, terraformResource)
+	}
+
+	for key, value := range attributesMap {
+		p.Configuration[key] = value
 	}
 
 	return p

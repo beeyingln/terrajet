@@ -75,7 +75,7 @@ func Run(pc *config.Provider, rootDir string) { // nolint:gocyclo
 			var tfResources []*terraformedInput
 			versionGen := NewVersionGenerator(rootDir, pc.ModulePath, group, version)
 			crdGen := NewCRDGenerator(versionGen.Package(), rootDir, pc.ShortName, group, version)
-			tfGen := NewTerraformedGenerator(versionGen.Package(), rootDir, group, version)
+			tfGen := NewTerraformedGenerator(versionGen.Package(), rootDir, pc.ModulePath, group, version)
 			ctrlGen := NewControllerGenerator(rootDir, pc.ModulePath, group)
 
 			for _, name := range sortedResources(resources) {
@@ -87,11 +87,14 @@ func Run(pc *config.Provider, rootDir string) { // nolint:gocyclo
 					Resource:           resources[name],
 					ParametersTypeName: paramTypeName,
 				})
-				ctrlPkgPath, err := ctrlGen.Generate(resources[name], versionGen.Package().Path())
-				if err != nil {
-					panic(errors.Wrapf(err, "cannot generate controller for resource %s", name))
+
+				if strings.HasSuffix(name, "_resource") {
+					ctrlPkgPath, err := ctrlGen.Generate(resources[name], versionGen.Package().Path())
+					if err != nil {
+						panic(errors.Wrapf(err, "cannot generate controller for resource %s", name))
+					}
+					controllerPkgList = append(controllerPkgList, ctrlPkgPath)
 				}
-				controllerPkgList = append(controllerPkgList, ctrlPkgPath)
 				count++
 			}
 
@@ -118,6 +121,9 @@ func Run(pc *config.Provider, rootDir string) { // nolint:gocyclo
 	}
 	if err := NewSetupGenerator(rootDir, pc.ModulePath).Generate(controllerPkgList); err != nil {
 		panic(errors.Wrap(err, "cannot generate setup file"))
+	}
+	if err := NewClientGenerator(rootDir, pc.ModulePath).Generate(pc.Configuration); err != nil {
+		panic(errors.Wrap(err, "cannot generate client file"))
 	}
 	if err := NewToolsGenerator(rootDir, pc.ModulePath).Generate(toolsResources); err != nil {
 		panic(errors.Wrap(err, "cannot generate tools file"))

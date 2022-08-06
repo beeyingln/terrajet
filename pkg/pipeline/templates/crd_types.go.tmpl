@@ -7,6 +7,9 @@ package {{ .CRD.APIVersion }}
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	{{- if .IsAggregateResource }}
+    "k8s.io/apimachinery/pkg/runtime"
+    {{- end }}
 
 	{{ .Imports }}
 )
@@ -16,13 +19,21 @@ import (
 // {{ .CRD.Kind }}Spec defines the desired state of {{ .CRD.Kind }}
 type {{ .CRD.Kind }}Spec struct {
 	{{ .XPCommonAPIsPackageAlias }}ResourceSpec `json:",inline"`
-	ForProvider       {{ .CRD.ForProviderType }} `json:"forProvider"`
+	{{- if .IsAggregateResource }}
+    ForProvider       runtime.RawExtension `json:"forProvider,omitempty"`
+    {{- else }}
+    ForProvider       {{ .CRD.ForProviderType }} `json:"forProvider"`
+    {{- end }}	
 }
 
 // {{ .CRD.Kind }}Status defines the observed state of {{ .CRD.Kind }}.
 type {{ .CRD.Kind }}Status struct {
 	{{ .XPCommonAPIsPackageAlias }}ResourceStatus `json:",inline"`
-	AtProvider          {{ .CRD.AtProviderType }} `json:"atProvider,omitempty"`
+	{{- if .IsAggregateResource }}
+    AtProvider          runtime.RawExtension `json:"atProvider,omitempty"`
+    {{- else }}
+    AtProvider          {{ .CRD.AtProviderType }} `json:"atProvider,omitempty"`
+    {{- end }}
 }
 
 // +kubebuilder:object:root=true

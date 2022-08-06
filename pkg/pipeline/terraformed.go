@@ -29,10 +29,11 @@ import (
 )
 
 // NewTerraformedGenerator returns a new TerraformedGenerator.
-func NewTerraformedGenerator(pkg *types.Package, rootDir, group, version string) *TerraformedGenerator {
+func NewTerraformedGenerator(pkg *types.Package, rootDir, modulePath, group, version string) *TerraformedGenerator {
 	return &TerraformedGenerator{
 		LocalDirectoryPath: filepath.Join(rootDir, "apis", strings.ToLower(strings.Split(group, ".")[0]), version),
 		LicenseHeaderPath:  filepath.Join(rootDir, "hack", "boilerplate.go.txt"),
+		ModulePath:         modulePath,
 		pkg:                pkg,
 	}
 }
@@ -42,6 +43,7 @@ func NewTerraformedGenerator(pkg *types.Package, rootDir, group, version string)
 type TerraformedGenerator struct {
 	LocalDirectoryPath string
 	LicenseHeaderPath  string
+	ModulePath         string
 
 	pkg *types.Package
 }
@@ -53,12 +55,12 @@ func (tg *TerraformedGenerator) Generate(cfgs []*terraformedInput, apiVersion st
 		wrapper.WithHeaderPath(tg.LicenseHeaderPath),
 	)
 	filePath := filepath.Join(tg.LocalDirectoryPath, "zz_generated_terraformed.go")
-	vars := map[string]interface{}{
-		"APIVersion": apiVersion,
-	}
+
+	containsAggregateResource := false
 	resources := make([]map[string]interface{}, len(cfgs))
 	index := 0
 	for _, cfg := range cfgs {
+		isAggregateResource := strings.HasSuffix(cfg.Name, "_resource")
 		resources[index] = map[string]interface{}{
 			"CRD": map[string]string{
 				"Kind":               cfg.Kind,
@@ -74,10 +76,20 @@ func (tg *TerraformedGenerator) Generate(cfgs []*terraformedInput, apiVersion st
 			"LateInitializer": map[string]interface{}{
 				"IgnoredFields": cfg.LateInitializer.GetIgnoredCanonicalFields(),
 			},
+			"IsAggregateResource": isAggregateResource,
 		}
 		index++
+
+		if isAggregateResource {
+			containsAggregateResource = true
+		}
 	}
-	vars["Resources"] = resources
+	vars := map[string]interface{}{
+		"APIVersion":                apiVersion,
+		"ModulePath":                tg.ModulePath,
+		"Resources":                 resources,
+		"ContainsAggregateResource": containsAggregateResource,
+	}
 	return errors.Wrap(
 		trFile.Write(filePath, vars, os.ModePerm),
 		"cannot write terraformed conversion methods file",
